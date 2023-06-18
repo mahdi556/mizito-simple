@@ -1,43 +1,32 @@
-const Chat = require("../models/chat");
+const Chat = require('../models/chat');
 
-// GET /chats/:sender/:receiver - Fetch all chats between two users
-exports.getChats = (req, res) => {
-  const { sender, receiver } = req.params;
-
-  Chat.find(
-    {
-      $or: [
-        { sender, receiver },
-        { sender: receiver, receiver: sender },
-      ],
-    },
-    (err, chats) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error retrieving chats");
-      } else {
-        res.send(chats);
-      }
-    }
-  );
+exports.getChatRoom = async (req, res) => {
+  try {
+    const roomId = req.params.roomId;
+    const chats = await Chat.find({room: roomId}).populate('user');
+    res.render('chat', {user: req.user, chats: chats, roomId: roomId});
+  } catch(error) {
+    console.error(error);
+    res.render('error');
+  }
 };
 
-// POST /chats - Create a new chat message
-exports.createChat = (req, res) => {
-  const { sender, receiver, message } = req.body;
+exports.postMessage = async (req, res) => {
+  try {
+    const message = req.body.message;
+    const roomId = req.body.roomId;
+    const user = req.user._id;
 
-  const newChat = new Chat({
-    sender,
-    receiver,
-    message,
-  });
+    // Save message to database
+    const chat = new Chat({message: message, room: roomId, user: user});
+    await chat.save();
 
-  newChat.save((err) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send("Error saving chat message");
-    } else {
-      res.send(newChat);
-    }
-  });
+    // Emit message to other users in the chat room
+    io.emit('receive-message', message, user);
+
+    res.send('Success');
+  } catch(error) {
+    console.error(error);
+    res.status(500).send('Server Error');
+  }
 };

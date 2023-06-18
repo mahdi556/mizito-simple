@@ -1,28 +1,24 @@
-const socketio = require("socket.io");
-const Chat = require("./models/chat");
+module.exports = function(server){
+  const io = require('socket.io')(server);
 
-function initializeSocketServer(server) {
-  const io = socketio(server);
- console.log()
-  io.on("connection", (socket) => {
-    console.log("a user connected");
+  io.on('connection', socket => {
+    console.log(`User ${socket.id} connected`);
 
-    socket.on("disconnect", () => {
-      console.log("user disconnected");
+    // Join room event
+    socket.on('join-room', (roomId, userId) => {
+      socket.join(roomId);
+      console.log(`User ${userId} joined room ${roomId}`);
     });
 
-    socket.on("chat message", async ({ sender, receiver, message }) => {
-      const chat = new Chat({
-        sender,
-        receiver,
-        message,
-      });
+    // Send message event
+    socket.on('send-message', (message, roomId, userId) => {
+      io.to(roomId).emit('receive-message', message, userId);
+      console.log(`User ${userId} sent message in room ${roomId}: ${message}`);
+    });
 
-      await chat.save();
-
-      io.emit("chat message", { sender, receiver, message });
+    // Disconnect event
+    socket.on('disconnect', () => {
+      console.log(`User ${socket.id} disconnected`);
     });
   });
-}
-
-module.exports = initializeSocketServer;
+};
