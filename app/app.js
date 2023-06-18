@@ -8,6 +8,7 @@ const cors = require("cors");
 const http = require("http");
 const socketio = require("socket.io");
 const initializeSocketServer = require("./socket");
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -43,6 +44,23 @@ const io = require("./socket")(server);
 
 // Initialize the Socket.IO server
 initializeSocketServer(io);
+
+
+
+// function generateRoomId(userId1, userId2) {
+//   const hash = crypto.createHash('sha256');
+//   const sortedIds = [userId1, userId2].sort().join('-');
+//   hash.update(sortedIds);
+//   return hash.digest('hex');
+// }
+
+// // Example usage
+// const userId1 = '456';
+// const userId2 = '123';
+// const roomId = generateRoomId(userId1, userId2);
+// console.log(roomId,'roomid'); // Output: 5f6d789b4564dbf524690754aebaa5e76f9bd7d3ff90052bc01a3fc705ccbd6c
+
+
 
 // Start the server listening for requests
 const PORT = process.env.PORT || 3010;
